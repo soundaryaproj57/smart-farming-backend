@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farming System</title>
+    <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+   <script src="{{ url_for('static', filename='js/translations.js') }}"></script>
+   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+   <script src="{{ url_for('static', filename='js/map-integration-enhanced.js') }}"></script>
+   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page active">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>🌱 Smart Farming System</h1>
+                    <p>Welcome to the future of agriculture</p>
+                </div>
+                
+                <div class="auth-tabs">
+                    <button id="loginTab" class="tab-btn active">Login</button>
+                    <button id="signupTab" class="tab-btn">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form active">
+                    <div class="form-group">
+                        <label class="form-label">User Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="userType" value="farmer" checked>
+                                <span>Farmer</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="userType" value="fertilizer">
+                                <span>Fertilizer Supplier</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label">User Type</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="signupUserType" value="farmer" checked>
+                                <span>Farmer</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="signupUserType" value="fertilizer">
+                                <span>Fertilizer Supplier</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="signupName">Full Name</label>
+                        <input type="text" id="signupName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="signupEmail">Email</label>
+                        <input type="email" id="signupEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="signupPassword">Password</label>
+                        <input type="password" id="signupPassword" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Sign Up</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="mainDashboard" class="page">
+        <nav class="navbar">
+            <div class="nav-brand">🌱 Smart Farm</div>
+            <div class="nav-user">
+                <div class="language-selector" style="margin-right: 15px;">
+                    <select id="languageSelect" class="form-control" style="padding: 4px 8px; font-size: 14px; height: auto; width: auto; background-color: #f8f9fa; border: 1px solid #ddd; cursor: pointer;">
+                        <option value="en">English</option>
+                        <option value="ta">தமிழ் (Tamil)</option>
+                        <option value="te">తెలుగు (Telugu)</option>
+                        <option value="hi">हिन्दी (Hindi)</option>
+                    </select>
+                </div>
+                <span id="userName" data-i18n="welcome">Welcome, Farmer</span>
+                <button id="logoutBtn" class="btn btn--outline btn--sm" data-i18n="logout">Logout</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="dashboard-header">
+                <h1 data-i18n="dashboard_title">Smart Farm Dashboard</h1>
+                <p><span data-i18n="dashboard_subtitle">Real-time monitoring and AI-powered insights</span> <span id="dbStatus" class="status-badge" style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; border: 1px solid #c8e6c9;"><i class="fas fa-circle" style="font-size: 0.5rem; margin-right: 4px; vertical-align: middle;"></i> LIVE</span></p>
+            </div>
+
+
+            <!-- Real-time Sensor Data in % -->
+            <div class="sensor-percentage-grid">
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="soil_moisture">Soil Moisture</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="moisturePercent">45%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="moistureProgress" style="width: 45%; background-color: var(--color-success);"></div>
+                    </div>
+                </div>
+
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="humidity">Humidity</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="humidityPercent">68%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="humidityProgress" style="width: 68%; background-color: #4FC3F7;"></div>
+                    </div>
+                </div>
+
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="temperature">Temperature</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="temperaturePercent">78%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="temperatureProgress" style="width: 78%; background-color: #FF9800;"></div>
+                    </div>
+                </div>
+
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="ph_level">pH Level</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="phPercent">85%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="phProgress" style="width: 85%; background-color: var(--color-success);"></div>
+                    </div>
+                </div>
+
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="nitrogen">Nitrogen</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="nitrogenPercent">72%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="nitrogenProgress" style="width: 72%; background-color: var(--color-success);"></div>
+                    </div>
+                </div>
+
+                <div class="sensor-percentage-card">
+                    <h3 data-i18n="water_level">Water Level</h3>
+                    <div class="percentage-display">
+                        <span class="percentage-value" id="waterPercent">60%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="waterProgress" style="width: 60%; background-color: #2196F3;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motor Cycle Prediction -->
+            <div class="motor-prediction-section">
+                <div class="prediction-card">
+                    <div class="prediction-header">
+                        <h2 data-i18n="ai_motor_title">🤖 AI Motor Cycle Prediction</h2>
+                        <div class="prediction-status">Random Forest Model</div>
+                    </div>
+                    <div class="prediction-content">
+                        <div class="prediction-main">
+                            <div class="prediction-value">
+                                <span class="prediction-label" data-i18n="motor_on_time">Recommended Motor ON Time:</span>
+                                <span class="prediction-time" id="predictedTime">-- <span data-i18n="mins">mins</span></span>
+                            </div>
+                            <div class="prediction-confidence">
+                                <span data-i18n="prediction_confidence">Prediction Confidence: </span>
+                                <span class="confidence-value" id="predictionConfidence">--%</span>
+                            </div>
+                        </div>
+                        <div class="prediction-explanation">
+                            <p id="predictionExplanation" data-i18n="auto_prediction_desc">Automatic AI prediction based on live sensor data 🌱</p>
+                        </div>
+                        
+                        <div class="prediction-actions" style="display: flex; gap: 12px; align-items: center;">
+                            <button id="startMotorBtn" class="btn btn--primary" style="flex: 1;" data-i18n="predict_irrigation_btn">Predict Irrigation Cycle</button>
+                            <button id="toggleAutoBtn" class="btn btn--secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #007bff; color: white;">
+                                <i class="fas fa-play"></i> <span id="autoBtnText" data-i18n="start_automatic">Start Automatic</span>
+                            </button>
+                        </div>
+
+                        <div id="autoTimerContainer" style="display: none; margin-top: 12px; font-size: 14px; color: #666;">
+                            <i class="fas fa-clock"></i> <span data-i18n="next_prediction">Next prediction in:</span> <span id="autoTimer">180</span> <span data-i18n="sec">sec</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+  
+            <div id="irrigationResultBox" class="prediction-card" style="display:none; margin-top: 16px; border-top: 4px solid var(--color-primary);">
+                <div class="prediction-content">
+                    <div id="irrigationResult"></div>
+                </div>
+            </div>
+
+
+            <!-- Crop Recommendation Section -->
+            <div class="crop-prediction-section" style="margin-top: 24px;">
+                <div class="prediction-card">
+                    <div class="prediction-header">
+                        <h2 data-i18n="soil_testing_title">🌾 Crop Recommendation System</h2>
+                        <div class="prediction-status">Random Forest Model</div>
+                    </div>
+                    <div class="prediction-content">
+                        <div class="prediction-main">
+                            <div class="prediction-value">
+                                <span class="prediction-label" data-i18n="crop_recommendation">Recommended Crop:</span>
+                                <span class="prediction-time" id="predictedCrop">--</span>
+                            </div>
+                            <div id="cropConfidenceContainer" class="prediction-confidence" style="display: none;">
+                                <span data-i18n="prediction_confidence">Prediction Confidence: </span>
+                                <span class="confidence-value" id="cropConfidence">--%</span>
+                            </div>
+                        </div>
+                        <div class="prediction-explanation">
+                            <p id="cropExplanation" data-i18n="soil_testing_desc">Analyze soil & weather to recommend the best crop</p>
+                        </div>
+                        <button id="startSoilTestBtn" class="btn btn--primary" data-i18n="perform_soil_testing">Perform Soil Testing</button>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- Weather Card -->
+            <div class="weather-section">
+                <div class="weather-card">
+                    <h3>🌤️ Current Weather</h3>
+                    <div class="weather-info">
+                        <div class="weather-main">
+                            <span class="weather-temp">28°C</span>
+                            <span class="weather-desc">Partly cloudy</span>
+                        </div>
+                        <div class="weather-details">
+                            <div class="weather-item">
+                                <span>Humidity: 65%</span>
+                            </div>
+                            <div class="weather-item">
+                                <span>Wind: 12 km/h</span>
+                            </div>
+                            <div class="weather-item">
+                                <span>Rainfall: 0mm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Page -->
+    <div id="scannerPage" class="page">
+        <nav class="navbar">
+            <div class="nav-brand">📱 Disease Scanner</div>
+            <div class="nav-actions">
+                <button id="backToMainDashboard" class="btn btn--outline btn--sm">Back</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="page-header">
+                <h1>Plant Disease Detection</h1>
+                <p>Scan your crops for early disease detection</p>
+            </div>
+
+            <div class="scanner-interface">
+                <div class="camera-section">
+                    <div class="camera-preview" id="cameraPreview">
+                        <div class="camera-placeholder">
+                            <div class="camera-icon">📷</div>
+                            <p>Camera Preview</p>
+                            <p class="camera-hint">Position plant leaf in the center</p>
+                        </div>
+                        <img id="capturedImage" class="captured-image" style="display: none;">
+                    </div>
+                    
+                    <div class="scanner-controls">
+                        <button id="captureBtn" class="btn btn--primary btn--lg">Capture Photo</button>
+                        <button id="galleryBtn" class="btn btn--secondary">Choose from Gallery</button>
+                        <input type="file" id="galleryInput" accept="image/*" style="display: none;">
+                        <button id="flipCameraBtn" class="btn btn--outline">Flip Camera</button>
+                    </div>
+                </div>
+
+                <div id="analysisResults" class="analysis-results" style="display: none;">
+                    <div class="results-header">
+                        <h2>🔬 Analysis Results</h2>
+                    </div>
+                    
+                    <div class="disease-detection">
+                        <div class="detection-card">
+                            <h3>Disease Detection</h3>
+                            <div class="detection-result">
+                                <span class="disease-name" id="detectedDisease">Early Blight</span>
+                                <span class="detection-confidence" id="detectionConfidence">87%</span>
+                            </div>
+                            <div class="affected-area">
+                                <strong>Affected Area:</strong> <span id="affectedArea">Leaf margins and spots</span>
+                            </div>
+                            <div class="severity-level">
+                                <strong>Severity:</strong> <span class="severity-badge" id="severityLevel">Moderate</span>
+                            </div>
+                        </div>
+
+                        <div class="medicine-recommendations">
+                            <h3>💊 Treatment Recommendations</h3>
+                            
+                            <div class="treatment-card primary-treatment">
+                                <h4>Primary Treatment</h4>
+                                <p class="medicine-name" id="primaryMedicine">Carbendazim 50% WP - Apply 1g/L water</p>
+                            </div>
+
+                            <div class="treatment-card secondary-treatment">
+                                <h4>Secondary Option</h4>
+                                <p class="medicine-name" id="secondaryMedicine">Copper Sulfate solution - 2g/L</p>
+                            </div>
+
+                            <div class="treatment-details">
+                                <div class="application-method">
+                                    <strong>Application Method:</strong>
+                                    <p id="applicationMethod">Spray every 7-10 days</p>
+                                </div>
+                                <div class="prevention-tips">
+                                    <strong>Prevention Tips:</strong>
+                                    <p id="preventionTips">Improve air circulation, avoid overhead watering</p>
+                                </div>
+                            </div>
+
+                            <div class="action-buttons" id="actionButtons">
+                                <button id="consultExpertBtn" class="btn btn--primary">Consult Expert</button>
+                                <button id="buyMedicineBtn" class="btn btn--secondary">Buy Medicine</button>
+                            </div>
+
+                            <!-- Medicine Suppliers Section (Initially Hidden) -->
+                            <div id="medicineSuppliers" class="medicine-suppliers-section" style="display: none;">
+                                <h3>🏪 Nearby Medicine Suppliers</h3>
+                                <p class="suppliers-subtitle">Find recommended medicines at these nearby locations</p>
+                                
+                                <div class="suppliers-list" id="suppliersList">
+                                    <!-- Suppliers will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location Page -->
+    <div id="locationPage" class="page">
+        <nav class="navbar">
+            <div class="nav-brand">📍 Farm Location</div>
+            <div class="nav-actions">
+                <button id="backToMainDashboard2" class="btn btn--outline btn--sm">Back</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="page-header">
+                <h1>Farm Location & Maps</h1>
+                <p>Your farm location with nearby agricultural resources</p>
+            </div>
+
+            <div class="location-info-section">
+                <div class="location-details">
+                    <div class="location-item">
+                        <strong>Farm Location:</strong>
+                        <span>Latitude: 12.9716°N, Longitude: 77.5946°E</span>
+                    </div>
+                    <div class="location-item">
+                        <strong>Area:</strong>
+                        <span>Bangalore, Karnataka, India</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-section">
+                <div class="map-container" style="position:relative;">
+                    <div id="map" style="height:500px;border-radius:12px;overflow:hidden;"></div>
+                    <div id="tooltip" style="position:absolute;display:none;background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px 10px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.15);"></div>
+                </div>
+                <div class="map-tools" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <select id="implementSelect" class="form-control" style="max-width:200px;">
+                        <option value="1.2">Plough (1.2m)</option>
+                        <option value="2.0">Harvester (2.0m)</option>
+                        <option value="3.0">Sprayer (3.0m)</option>
+                    </select>
+                    <button id="drawBtn" class="btn btn--primary">Draw Field</button>
+                    <button id="editBtn" class="btn btn--secondary">Edit</button>
+                    <button id="deleteBtn" class="btn btn--outline">Delete</button>
+                    <button id="clearBtn" class="btn btn--outline">Clear Field</button>
+                    <button id="generateBtn" class="btn btn--primary">Generate Coverage</button>
+                    <button id="exportBtn" class="btn btn--secondary">Export</button>
+                </div>
+
+                <div class="nearby-resources">
+                    <h3>📍 Nearby Agricultural Resources</h3>
+                    <div class="resource-list">
+                        <div class="resource-item">
+                            <div class="resource-icon">🌾</div>
+                            <div class="resource-info">
+                                <strong>Green Valley Farm</strong>
+                                <p>Organic farming specialist - 2.5 km away</p>
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-icon">🔬</div>
+                            <div class="resource-info">
+                                <strong>Tech Agri Center</strong>
+                                <p>Research facility - 3.2 km away</p>
+                            </div>
+                        </div>
+                        <div class="resource-item">
+                            <div class="resource-icon">🌡️</div>
+                            <div class="resource-info">
+                                <strong>Bangalore Weather Station</strong>
+                                <p>Real-time weather data - 1.8 km away</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Tasks Page -->
+    <div id="dailyTasksPage" class="page">
+        <nav class="navbar">
+            <div class="nav-brand">📋 Daily Tasks</div>
+            <div class="nav-actions">
+                <button id="backToMainDashboard3" class="btn btn--outline btn--sm">Back</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="page-header">
+                <h1>Farmer's Daily Checklist</h1>
+                <p>Keep track of your daily farming activities</p>
+            </div>
+
+            <div class="tasks-section">
+                <div class="task-summary">
+                    <div class="summary-item">
+                        <span class="summary-value" id="completedTasks">1</span>
+                        <span class="summary-label">Completed</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-value" id="pendingTasks">3</span>
+                        <span class="summary-label">Pending</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-value" id="highPriorityTasks">2</span>
+                        <span class="summary-label">High Priority</span>
+                    </div>
+                </div>
+
+                <div class="task-list" id="taskList">
+                    <!-- Tasks will be populated by JavaScript -->
+                </div>
+
+                <div class="add-task-section">
+                    <button id="addTaskBtn" class="btn btn--primary">+ Add New Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sensors Page -->
+    <div id="sensorsPage" class="page">
+        <nav class="navbar">
+            <div class="nav-brand">📊 Sensor Dashboard</div>
+            <div class="nav-actions">
+                <button id="backToMainDashboard4" class="btn btn--outline btn--sm">Back</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="page-header">
+                <h1>IoT Sensor Readings</h1>
+                <p>Real-time monitoring and historical trends</p>
+            </div>
+
+            <div class="sensor-detail-grid">
+                <div class="sensor-detail-card">
+                    <h3>Soil Moisture</h3>
+                    <div class="sensor-main-value">
+                        <span class="sensor-percent" id="detailMoisturePercent">45%</span>
+                        <span class="sensor-status good">Optimal</span>
+                    </div>
+                    <div class="circular-progress" data-percent="45">
+                        <svg class="circular-chart" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circle" stroke-dasharray="45, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                    </div>
+                    <div class="sensor-trend">📈 +2% from yesterday</div>
+                </div>
+
+                <div class="sensor-detail-card">
+                    <h3>Humidity</h3>
+                    <div class="sensor-main-value">
+                        <span class="sensor-percent" id="detailHumidityPercent">68%</span>
+                        <span class="sensor-status good">Good</span>
+                    </div>
+                    <div class="circular-progress" data-percent="68">
+                        <svg class="circular-chart" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circle" stroke-dasharray="68, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                    </div>
+                    <div class="sensor-trend">📊 Stable</div>
+                </div>
+
+                <div class="sensor-detail-card">
+                    <h3>Temperature</h3>
+                    <div class="sensor-main-value">
+                        <span class="sensor-percent" id="detailTemperaturePercent">78%</span>
+                        <span class="sensor-status warning">High</span>
+                    </div>
+                    <div class="circular-progress" data-percent="78">
+                        <svg class="circular-chart" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circle orange" stroke-dasharray="78, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                    </div>
+                    <div class="sensor-trend">📈 +5% from yesterday</div>
+                </div>
+
+                <div class="sensor-detail-card">
+                    <h3>Water Level</h3>
+                    <div class="sensor-main-value">
+                        <span class="sensor-percent" id="detailWaterPercent">60%</span>
+                        <span class="sensor-status good">Normal</span>
+                    </div>
+                    <div class="circular-progress" data-percent="60">
+                        <svg class="circular-chart" viewBox="0 0 36 36">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path class="circle blue" stroke-dasharray="60, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                    </div>
+                    <div class="sensor-trend">📉 -3% from yesterday</div>
+                </div>
+            </div>
+
+            <div class="historical-data-section">
+                <div class="card">
+                    <div class="card__header">
+                        <h2>7-Day Sensor Trends</h2>
+                    </div>
+                    <div class="card__body">
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="historicalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+  const userType = "{{ userType }}";
+  console.log("Logged user:", userType);
+</script>
+<!-- Bottom Navigation Bar -->
+<div id="bottomTaskBar" class="bottom-nav">
+
+  <a href="#" class="bottom-nav-item active" data-page="mainDashboard">
+    <i class="fa-solid fa-gauge"></i>
+    <span data-i18n="home">Dashboard</span>
+  </a>
+
+  <a href="#" class="bottom-nav-item" data-page="scannerPage">
+    <i class="fa-solid fa-qrcode"></i>
+    <span data-i18n="scanner">Scanner</span>
+  </a>
+
+  <a href="#" class="bottom-nav-item" data-page="locationPage">
+    <i class="fa-solid fa-map-location-dot"></i>
+    <span data-i18n="map">Map</span>
+  </a>
+
+  <a href="#" class="bottom-nav-item" data-page="sensorsPage">
+    <i class="fa-solid fa-microchip"></i>
+    <span data-i18n="sensors">Sensors</span>
+  </a>
+
+</div>
+
+
+</body>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+</html>
