@@ -12,7 +12,7 @@ path_planner_bp = Blueprint('path_planner', __name__, url_prefix='/api/path')
 def plan_path():
     """
     Generate optimal coverage path for field
-    
+
     Request JSON:
     {
         "field_boundary": [[lat, lon], [lat, lon], ...],  # At least 3 points
