@@ -853,10 +853,10 @@ this.sensorData.water = data.water_level ?? 0;
     reader.readAsDataURL(file);
 
     // call backend
-    fetch("/predict-disease", {
-        method: "POST",
-        body: formData
-    })
+    fetch("/api/ml/disease-detect", {
+    method: "POST",
+    body: formData
+})
     .then(res => res.json())
     .then(data => {
         console.log("Disease API Response:", data);
