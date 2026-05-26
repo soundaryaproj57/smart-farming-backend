@@ -205,15 +205,23 @@ def predict_disease_api():
             image_path
         )
 
-        # TEMP FIX FOR SHAREABLE APP
+        # REAL DISEASE PREDICTION
+        from ml.disease.analysis.test_pipeline import (
+            run_pipeline
+        )
+
+        result = run_pipeline(
+            image_path
+        )
+
+        print(
+            "🔥 Disease Result:",
+            result
+        )
+
         return jsonify({
             "status": "success",
-            "disease": "Leaf Blight",
-            "confidence": 94.6,
-            "severity": "Moderate",
-            "infected_area": 32.5,
-            "treatment":
-            "Apply fungicide and remove infected leaves"
+            **result
         }), 200
 
     except Exception as e:
