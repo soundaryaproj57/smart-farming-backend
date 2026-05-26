@@ -1,1 +1,1 @@
-web: python app.py --fresh-build
+web: python app.py
