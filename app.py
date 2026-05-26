@@ -1,7 +1,16 @@
 import os
+
+# ====================================
+# REDUCE TENSORFLOW MEMORY USAGE
+# ====================================
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 from flask import Flask, render_template, request
 
-# Blueprint imports
+# ====================================
+# IMPORT BLUEPRINTS
+# ====================================
 from routing import (
     path_planner_bp,
     ml_bp,
@@ -9,8 +18,14 @@ from routing import (
     iot_bp
 )
 
+# ====================================
+# CREATE APP
+# ====================================
 app = Flask(__name__)
 
+# ====================================
+# FILE PATHS
+# ====================================
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
@@ -28,7 +43,6 @@ os.makedirs(
 # ====================================
 # REGISTER BLUEPRINTS
 # ====================================
-
 app.register_blueprint(
     path_planner_bp
 )
@@ -48,7 +62,6 @@ app.register_blueprint(
 # ====================================
 # PAGE ROUTES
 # ====================================
-
 @app.route("/")
 def index():
     user_type = request.args.get(
@@ -72,18 +85,23 @@ def dashboard():
 def health():
     return {
         "status": "running",
-        "message":
-        "Smart Farming Backend Running 🚜"
+        "message": "Smart Farming Backend Running 🚜"
     }
 
 
 # ====================================
 # RUN APP
 # ====================================
-
 if __name__ == "__main__":
+    port = int(
+        os.environ.get(
+            "PORT",
+            5002
+        )
+    )
+
     app.run(
-        debug=True,
+        debug=False,
         host="0.0.0.0",
-        port=5002
+        port=port
     )
