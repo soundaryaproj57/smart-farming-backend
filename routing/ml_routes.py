@@ -19,6 +19,29 @@ from ml.crop.predict.crop_predict import (
     predict_crop
 )
 
+# ==========================================
+# LOAD DISEASE MODEL ONLY ONCE
+# ==========================================
+
+try:
+    from ml.disease.predict.disease_predict import (
+        predict_disease as run_disease_prediction
+    )
+
+    print(
+        "🔥 Disease model loaded"
+    )
+
+except Exception as e:
+
+    print(
+        "❌ Disease model load failed:",
+        e
+    )
+
+    run_disease_prediction = None
+
+
 ml_bp = Blueprint(
     'ml',
     __name__,
@@ -121,8 +144,10 @@ def predict_irrigation_api():
             latest
         )
 
-        motor, irrigation_time, confidence = predict_irrigation(
-            latest
+        motor, irrigation_time, confidence = (
+            predict_irrigation(
+                latest
+            )
         )
 
         return jsonify({
@@ -171,10 +196,20 @@ def predict_disease_api():
 
     try:
 
+        if run_disease_prediction is None:
+
+            return jsonify({
+                "status":
+                    "error",
+                "error":
+                    "Disease model not loaded"
+            }), 500
+
         if (
             "image"
             not in request.files
         ):
+
             return jsonify({
                 "status":
                     "error",
@@ -187,6 +222,7 @@ def predict_disease_api():
         ]
 
         if not image_file.filename:
+
             return jsonify({
                 "status":
                     "error",
@@ -208,11 +244,7 @@ def predict_disease_api():
             image_path
         )
 
-        from ml.disease.predict.disease_predict import (
-            predict_disease
-        )
-
-        result = predict_disease(
+        result = run_disease_prediction(
             image_path
         )
 

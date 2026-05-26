@@ -28,10 +28,9 @@ if not os.path.exists(MODEL_PATH):
     )
 
 model = tf.keras.models.load_model(
-    model_path,
+    MODEL_PATH,
     compile=False
 )
-
 
 def run_pipeline(image_path):
 
