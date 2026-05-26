@@ -5,4 +5,4 @@ scikit-learn
 tensorflow-cpu==2.16.1
 opencv-python-headless
 pillow
-firebase-admin
+firebase-admin==6.5.0
